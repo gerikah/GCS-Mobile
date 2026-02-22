@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:init": "npx cap init",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -14,12 +17,14 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0",
-    "types": "file:../packages/types"
+    "types": "file:../packages/types",
+    "@capacitor/core": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
+    ,"@capacitor/cli": "^5.0.0"
   }
 }
