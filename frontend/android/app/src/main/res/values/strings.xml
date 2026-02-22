@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ground Control Station</string>
+    <string name="title_activity_main">Ground Control Station</string>
+    <string name="package_name">com.alkive.gcs</string>
+    <string name="custom_url_scheme">com.alkive.gcs</string>
+</resources>

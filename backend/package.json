@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fastify/websocket": "^10.0.1",
+    "@supabase/supabase-js": "^2.31.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "pg": "^8.12.0",

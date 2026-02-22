@@ -12,19 +12,21 @@
     "cap:open": "npx cap open"
   },
   "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/core": "^5.0.0",
+    "@supabase/supabase-js": "^2.31.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.553.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0",
-    "types": "file:../packages/types",
-    "@capacitor/core": "^5.0.0"
+    "types": "file:../packages/types"
   },
   "devDependencies": {
+    "@capacitor/cli": "^5.0.0",
     "@types/node": "^22.19.1",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-    ,"@capacitor/cli": "^5.0.0"
   }
 }
