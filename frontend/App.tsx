@@ -1,29 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import type { Session } from '@supabase/supabase-js';
 
-// ---
-
-import Sidebar from './components/ControlPanel'; 
-import DashboardHeader from './components/Header'; 
-import LiveMissionView from './components/LiveMissionView';
+import Sidebar from './components/ControlPanel';
+import DashboardHeader from './components/Header';
 import DashboardView from './components/DashboardView';
 import AnalyticsPanel from './components/AnalyticsPanel';
 import FlightLogsPanel from './components/FlightLogsPanel';
 import SettingsPanel from './components/SettingsPanel';
-import MissionSetupView from './components/MissionSetupView';
 import GuidePanel from './components/GuidePanel';
 import AboutPanel from './components/AboutPanel';
+import AccountPanel from './components/AccountPanel';
+import AuthScreen from './components/AuthScreen';
+import SplashScreen from './components/SplashScreen';
 
 import { useDashboardData } from './hooks/useDashboardData';
-import type { Mission, BreedingSiteInfo, MissionPlan, LiveTelemetry } from 'types';
-// ---
+import { supabase } from './supabaseClient';
+import type { Mission } from 'types';
 
-type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about';
+type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about' | 'account';
 
-const App: React.FC = () => {
-  const [isMissionActive, setMissionActive] = useState(false);
-  const [missionPlan, setMissionPlan] = useState<MissionPlan | null>(null);
-  const [isSetupViewVisible, setSetupViewVisible] = useState(false);
-  const [isDarkMode, setDarkMode] = useState(false);
+interface AuthenticatedAppProps {
+  session: Session;
+  onSignOut: () => Promise<void>;
+}
+
+const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ session, onSignOut }) => {
   const [mapStyle, setMapStyle] = useState(() => {
     return localStorage.getItem('mapStyle') || 'Satellite';
   });
@@ -44,88 +45,26 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // 1. Start with an empty array
-  const [missions, setMissions] = useState<Mission[]>([]); 
-  const { overviewStats, time, date, liveTelemetry, setArmedState } = useDashboardData(isMissionActive);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const { overviewStats, liveTelemetry } = useDashboardData(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
 
-  // 2. Fetch missions from the backend when the app loads
   useEffect(() => {
     const fetchMissions = async () => {
       try {
-        const response = await fetch('/api/missions'); // Uses the vite proxy
-        
-        // ---
-        // 3. CRASH FIX
-        // This checks for 500 errors and prevents the "missions.slice" crash
-        // ---
+        const response = await fetch('/api/missions');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        // ---
-
         const data: Mission[] = await response.json();
         setMissions(data);
       } catch (error) {
-        console.error("Failed to fetch missions:", error);
-        // On error, set missions to an empty array so the app doesn't crash
-        setMissions([]); 
+        console.error('Failed to fetch missions:', error);
+        setMissions([]);
       }
     };
     fetchMissions();
-  }, []); // The empty array means this runs only once
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-  
-  // 4. This function now SAVES the mission to the backend
-  const endMission = async (duration: string, gpsTrack: { lat: number; lon: number }[], detectedSites: BreedingSiteInfo[]) => {
-    const newMission: Omit<Mission, 'id'> = { // The database will create the 'id'
-        name: missionPlan?.name || `Mission ${missions.length + 1}`,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        duration,
-        status: 'Completed',
-        location: 'Live Location',
-        gpsTrack,
-        detectedSites,
-    };
-
-    try {
-      // Send the new mission data to the backend
-      const response = await fetch('/api/missions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMission)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const savedMission: Mission = await response.json(); // Get the final mission back
-      setMissions(prevMissions => [savedMission, ...prevMissions]); // Add it to the list
-    } catch (error) {
-      console.error("Failed to save mission:", error);
-    }
-
-    setMissionActive(false);
-    setMissionPlan(null);
-  };
-  
-  const handleLaunchMission = (plan: MissionPlan) => {
-    setMissionPlan(plan);
-    setSetupViewVisible(false);
-    setMissionActive(true);
-  };
-
-  const handleOpenMissionSetup = () => {
-    setSetupViewVisible(true);
-  };
+  }, []);
 
   const renderView = () => {
     switch (currentView) {
@@ -134,24 +73,26 @@ const App: React.FC = () => {
       case 'flightLogs':
         return <FlightLogsPanel missions={missions} mapStyle={mapStyle} />;
       case 'settings':
-        return <SettingsPanel 
-          isDarkMode={isDarkMode} 
-          onToggleDarkMode={() => setDarkMode(!isDarkMode)} 
-          mapStyle={mapStyle}
-          setMapStyle={setMapStyle}
-          theme={theme}
-          setTheme={setTheme}
-        />;
+        return (
+          <SettingsPanel
+            mapStyle={mapStyle}
+            setMapStyle={setMapStyle}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        );
       case 'guide':
         return <GuidePanel />;
       case 'about':
         return <AboutPanel />;
+      case 'account':
+        return <AccountPanel email={session.user.email || ''} onSignOut={onSignOut} />;
       case 'dashboard':
       default:
-        return <DashboardView overviewStats={overviewStats} missions={missions} onMissionSetup={handleOpenMissionSetup} telemetry={liveTelemetry} setArmedState={setArmedState} />;
+        return <DashboardView overviewStats={overviewStats} missions={missions} />;
     }
   };
-  
+
   const viewTitles: Record<View, string> = {
     dashboard: 'Dashboard',
     analytics: 'Analytics',
@@ -159,22 +100,106 @@ const App: React.FC = () => {
     settings: 'Settings',
     guide: 'Guide',
     about: 'About Project',
+    account: 'Account',
   };
 
+  const contentClassName = currentView === 'dashboard' ? 'min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1 overflow-y-auto';
+  const showBackView = currentView === 'guide' || currentView === 'settings' || currentView === 'about' || currentView === 'account';
+
   return (
-    <div className="flex h-screen bg-gcs-background text-gcs-text-dark font-sans dark:bg-gcs-dark dark:text-gcs-text-light overflow-hidden">
+    <div className="app-theme app-shell-bg relative flex h-screen overflow-hidden bg-gcs-background font-sans text-gcs-text-dark dark:bg-gcs-dark dark:text-gcs-text-light">
+      <div className="pointer-events-none absolute -left-10 top-14 h-44 w-44 rounded-full bg-orange-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-1/3 h-52 w-52 rounded-full bg-blue-300/10 blur-3xl" />
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
-      <main className="flex-1 flex flex-col p-4 overflow-hidden">
-        <DashboardHeader time={time} date={date} title={viewTitles[currentView]} batteryPercentage={liveTelemetry.battery.percentage} />
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {renderView()}
-        </div>
+      <main className="relative z-10 flex flex-1 flex-col overflow-hidden p-3 pb-20">
+        <DashboardHeader
+          title={viewTitles[currentView]}
+          batteryPercentage={liveTelemetry.battery.percentage}
+          onOpenGuide={() => setCurrentView('guide')}
+          onOpenSettings={() => setCurrentView('settings')}
+          onOpenAbout={() => setCurrentView('about')}
+          onOpenAccount={() => setCurrentView('account')}
+          showMenuButton={!showBackView}
+          showBackButton={showBackView}
+          onBack={() => setCurrentView('dashboard')}
+        />
+        <div className={contentClassName}>{renderView()}</div>
       </main>
-      
-      {isSetupViewVisible && <MissionSetupView onLaunch={handleLaunchMission} onClose={() => setSetupViewVisible(false)} mapStyle={mapStyle} />}
-      {isMissionActive && <LiveMissionView telemetry={liveTelemetry} onEndMission={endMission} mapStyle={mapStyle} />}
     </div>
   );
+};
+
+const App: React.FC = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashRunId, setSplashRunId] = useState(0);
+  const hasShownInitialSplash = useRef(false);
+  const previousSession = useRef<Session | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (mounted) {
+        setSession(data.session);
+        setAuthLoading(false);
+      }
+    };
+
+    initSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    const shouldShow = !hasShownInitialSplash.current || (!previousSession.current && !!session);
+    previousSession.current = session;
+
+    if (!shouldShow) {
+      return;
+    }
+
+    hasShownInitialSplash.current = true;
+    setShowSplash(true);
+    setSplashRunId(prev => prev + 1);
+  }, [authLoading, session]);
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out failed:', error.message);
+    }
+  };
+
+  if (authLoading) {
+    return <SplashScreen key={`splash-auth-${splashRunId}`} />;
+  }
+
+  if (showSplash) {
+    return <SplashScreen key={`splash-ui-${splashRunId}`} onComplete={() => setShowSplash(false)} />;
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
+
+  return <AuthenticatedApp session={session} onSignOut={handleSignOut} />;
 };
 
 export default App;

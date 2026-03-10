@@ -12,7 +12,7 @@
         extend: {
           colors: {
             'gcs-dark': '#111827',
-            'gcs-background': '#F9F4F1',
+            'gcs-background': '#1b2a4a',
             'gcs-primary': 'var(--gcs-primary)',
             'gcs-primary-light': 'var(--gcs-primary-light)',
             'gcs-primary-dark': 'var(--gcs-primary-dark)',
@@ -20,7 +20,7 @@
             'gcs-orange': 'var(--gcs-primary)', // Keep gcs-orange for compatibility
             'gcs-text-dark': '#1F2937',
             'gcs-text-light': '#D1D5DB',
-            'gcs-card': '#FFFFFF',
+            'gcs-card': '#F2EAE5',
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -45,6 +45,50 @@
     <style>
       .leaflet-control-attribution {
         font-size: 0.6rem !important; /* Smaller font size for attribution */
+      }
+      .app-shell-bg {
+        background-image:
+          radial-gradient(circle at 14% 20%, rgba(249, 115, 22, 0.18), transparent 38%),
+          radial-gradient(circle at 84% 12%, rgba(249, 115, 22, 0.08), transparent 32%),
+          radial-gradient(circle at 78% 76%, rgba(59, 130, 246, 0.08), transparent 34%),
+          linear-gradient(145deg, #121c34 0%, #172544 55%, #142341 100%);
+      }
+      .app-theme .bg-white {
+        background-color: #F2EAE5 !important;
+      }
+      .app-theme .bg-gray-100 {
+        background-color: #F2EAE5 !important;
+      }
+      .app-theme .bg-gray-200 {
+        background-color: #F2EAE5 !important;
+      }
+      .app-theme .border-gray-200 {
+        border-color: #3a4d78 !important;
+      }
+      .app-theme .bg-white,
+      .app-theme .bg-gray-100,
+      .app-theme .bg-gray-200 {
+        color: #253047 !important;
+      }
+      .app-theme .bg-white .text-gray-400,
+      .app-theme .bg-white .text-gray-500,
+      .app-theme .bg-white .text-gray-600,
+      .app-theme .bg-white .text-gray-700,
+      .app-theme .bg-white .text-black,
+      .app-theme .bg-white .text-gcs-text-dark,
+      .app-theme .bg-gray-100 .text-gray-400,
+      .app-theme .bg-gray-100 .text-gray-500,
+      .app-theme .bg-gray-100 .text-gray-600,
+      .app-theme .bg-gray-100 .text-gray-700,
+      .app-theme .bg-gray-100 .text-black,
+      .app-theme .bg-gray-100 .text-gcs-text-dark,
+      .app-theme .bg-gray-200 .text-gray-400,
+      .app-theme .bg-gray-200 .text-gray-500,
+      .app-theme .bg-gray-200 .text-gray-600,
+      .app-theme .bg-gray-200 .text-gray-700,
+      .app-theme .bg-gray-200 .text-black,
+      .app-theme .bg-gray-200 .text-gcs-text-dark {
+        color: #253047 !important;
       }
       :root {
         --gcs-primary: #F97316;

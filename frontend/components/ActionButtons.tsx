@@ -13,8 +13,8 @@ const TelemetryItem: React.FC<{ icon: React.ReactNode; label: string; value: str
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{label}</p>
-            <p className="font-semibold text-xs text-gcs-text-dark dark:text-white truncate">{value}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{label}</p>
+            <p className="font-semibold text-[11px] text-gcs-text-dark dark:text-white truncate">{value}</p>
         </div>
     </div>
 );
@@ -32,52 +32,45 @@ const getSignalStatus = (dbm: number) => {
 }
 
 interface PreFlightPanelProps {
-    onMissionSetup: () => void;
     telemetry: LiveTelemetry;
     setArmedState: (isArmed: boolean) => void;
 }
 
-const PreFlightPanel: React.FC<PreFlightPanelProps> = ({ onMissionSetup, telemetry, setArmedState }) => {
+const PreFlightPanel: React.FC<PreFlightPanelProps> = ({ telemetry, setArmedState }) => {
     const gpsStatus = getGpsStatus(telemetry.satellites);
     const signalStatus = getSignalStatus(telemetry.signalStrength);
 
     return (
         <div className="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm h-full flex flex-col">
             <div className="flex-1 flex flex-col">
-                <h3 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2">Pre-Flight Systems</h3>
+                <h3 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2">Pre-Flight Systems</h3>
                 
                 <div className="bg-gray-100 dark:bg-gray-900/50 p-2 mb-2 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs dark:text-gray-300">STATUS:</span>
-                        <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${telemetry.armed ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'}`}>
+                        <span className="font-bold text-[11px] dark:text-gray-300">STATUS:</span>
+                        <span className={`px-2 py-0.5 text-[11px] font-bold rounded-full ${telemetry.armed ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'}`}>
                             {telemetry.armed ? 'ARMED' : 'DISARMED'}
                         </span>
                     </div>
                     <div className="flex gap-1.5">
-                        <button onClick={() => setArmedState(true)} disabled={telemetry.armed} className="text-xs font-bold bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed">ARM</button>
-                        <button onClick={() => setArmedState(false)} disabled={!telemetry.armed} className="text-xs font-bold bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed">DISARM</button>
+                        <button onClick={() => setArmedState(true)} disabled={telemetry.armed} className="text-[11px] font-bold bg-green-600 hover:bg-green-700 text-white py-1 px-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed">ARM</button>
+                        <button onClick={() => setArmedState(false)} disabled={!telemetry.armed} className="text-[11px] font-bold bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed">DISARM</button>
                     </div>
                 </div>
 
                 <div className="flex-1 flex flex-col">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Live Telemetry</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Live Telemetry</h4>
                      <div className="grid grid-cols-2 gap-1.5 flex-1">
                         <TelemetryItem icon={<GpsIcon />} label="GPS Status" value={gpsStatus.text} statusColor={gpsStatus.color} />
                         <TelemetryItem icon={<SatelliteIcon />} label="Satellites" value={`${telemetry.satellites} Locked`} />
                         <TelemetryItem icon={<BatteryIcon />} label="Drone Battery" value={`${telemetry.battery.percentage.toFixed(1)}%`} />
                         <TelemetryItem icon={<SignalIcon />} label="Signal Strength" value={`${telemetry.signalStrength} dBm`} statusColor={signalStatus.color} />
                     </div>
-                    <div className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    <div className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
                         Mode: {telemetry.flightMode} | Lat: {telemetry.gps.lat.toFixed(4)}, Lon: {telemetry.gps.lon.toFixed(4)}
                     </div>
                 </div>
             </div>
-            <button
-                onClick={onMissionSetup}
-                className="w-full mt-3 text-white font-bold py-2 px-4 text-sm rounded-lg transition-all duration-200 bg-gcs-primary hover:opacity-90 shadow-lg shadow-gcs-primary/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gcs-primary"
-            >
-                Plan New Mission
-            </button>
         </div>
     );
 };

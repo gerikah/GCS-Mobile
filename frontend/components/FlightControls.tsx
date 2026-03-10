@@ -11,17 +11,17 @@ const TelemetryItem: React.FC<{ label: string; value: string | number; subValue?
     <div className="flex items-center justify-between p-3 bg-[#0F172A] rounded-lg">
         <div className="flex items-center gap-3">
             <div className="text-yellow-400">{icon}</div>
-            <span className="text-sm text-gray-300">{label}</span>
+            <span className="text-[11px] text-gray-300">{label}</span>
         </div>
         <div className="text-right">
           <span className="font-mono text-white">{value}</span>
-          {subValue && <span className="text-xs ml-1 opacity-70">{subValue}</span>}
+          {subValue && <span className="text-[11px] ml-1 opacity-70">{subValue}</span>}
         </div>
     </div>
 );
 
 const ModeButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <button className="bg-[#334155] hover:bg-[#475569] text-sm text-gray-200 font-semibold py-3 rounded-lg transition-colors">
+    <button className="bg-[#334155] hover:bg-[#475569] text-[11px] text-gray-200 font-semibold py-3 rounded-lg transition-colors">
         {children}
     </button>
 );

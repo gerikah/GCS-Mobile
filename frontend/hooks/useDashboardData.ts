@@ -8,18 +8,18 @@ import type { OverviewStat, LiveTelemetry } from 'types';
 // so the component doesn't crash before the websocket connects.
 //
 const defaultTelemetry: LiveTelemetry = {
-    gps: { lat: 14.531120, lon: 121.057442 },
+    gps: { lat: 0.0, lon: 0.0 },
     altitude: 0,
     speed: 0,
     roll: 0,
     pitch: 0,
-    heading: 345,
-    signalStrength: -55,
-    battery: { voltage: 16.8, percentage: 99 },
-    satellites: 14,
-    flightTime: '00:00',
+    heading: 0,
+    signalStrength: 0.0,
+    battery: { voltage: 0.0, percentage: 0.0 },
+    satellites: 0,
+    flightTime: '0.0',
     distanceFromHome: 0,
-    flightMode: 'Loiter',
+    flightMode: '0.0',
     armed: false,
     verticalSpeed: 0,
     breedingSiteDetected: false,
@@ -43,7 +43,7 @@ const defaultTelemetry: LiveTelemetry = {
 export const useDashboardData = (isMissionActive: boolean) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [liveTelemetry, setLiveTelemetry] = useState<LiveTelemetry>(defaultTelemetry);
-  const [stats, setStats] = useState({ totalFlights: 0, totalFlightTime: '0 Hours' });
+  const [stats, setStats] = useState({ totalFlights: 0.0, totalFlightTime: '0.0' });
   const socketRef = useRef<WebSocket | null>(null); // Holds the WebSocket connection
 
   // This function now SENDS a command to the backend
@@ -77,7 +77,10 @@ export const useDashboardData = (isMissionActive: boolean) => {
       try {
         const response = await fetch('/api/missions/stats');
         const data = await response.json();
-        setStats(data);
+        setStats({
+          totalFlights: Number(data?.totalFlights ?? 0.0),
+          totalFlightTime: String(data?.totalFlightTime ?? '0.0'),
+        });
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       }
@@ -122,19 +125,19 @@ export const useDashboardData = (isMissionActive: boolean) => {
       { 
         id: 'flights', 
         label: 'Total Flights', 
-        value: `${stats.totalFlights} Flights`, 
+        value: `${stats.totalFlights.toFixed(1)}`,
         subtext: 'Completed Missions' 
       },
       { 
         id: 'flightTime', 
         label: 'Total Flight Time', 
-        value: stats.totalFlightTime, 
+        value: stats.totalFlightTime === '0.0' ? '0.0' : stats.totalFlightTime, 
         subtext: 'Accumulated drone flight duration' 
       },
       { 
         id: 'battery', 
         label: 'System Battery', 
-        value: `${liveTelemetry.battery.percentage.toFixed(1)}%`, // From live data
+        value: `${liveTelemetry.battery.percentage.toFixed(1)}`,
         subtext: liveTelemetry.battery.percentage > 20 ? 'Healthy' : 'Low' 
       },
   ];

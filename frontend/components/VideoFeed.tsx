@@ -1,7 +1,7 @@
 import React from 'react';
 
 const TelemetryItem: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-    <div className="flex items-center space-x-3 text-sm">
+    <div className="flex items-center space-x-3 text-[11px]">
         {icon}
         <span className="text-gray-600">{label}</span>
     </div>
@@ -30,7 +30,7 @@ const ArrowUpIcon = () => (
 const TelemetryData: React.FC = () => {
   return (
     <div className="bg-gcs-card p-6 rounded-2xl shadow-sm">
-        <h3 className="text-xl font-bold mb-4">Telemetry Data</h3>
+        <h3 className="text-sm font-bold mb-4">Telemetry Data</h3>
         <div className="space-y-4">
             <TelemetryItem icon={<InitializingIcon />} label="Initializing..." />
             <TelemetryItem icon={<ArrowUpIcon />} label="Initializing..." />

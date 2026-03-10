@@ -12,70 +12,70 @@ const AboutPanel: React.FC = () => {
                         </svg>
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold">Smart Mosquito Control Drone</h1>
-                        <p className="text-xs opacity-90">Ground Control Station v1.0</p>
+                        <h1 className="text-sm font-bold">Smart Mosquito Control Drone</h1>
+                        <p className="text-[11px] opacity-90">Ground Control Station v1.0</p>
                     </div>
                 </div>
             </div>
 
             {/* Project Overview */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                     <span className="text-lg">📋</span>
                     Project Overview
                 </h2>
-                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
                     The Smart Mosquito Control Drone GCS is a monitoring and control interface designed to manage a semi-autonomous UAV for mosquito larval detection and larvicide deployment. This system combines advanced AI detection with real-time telemetry to provide an efficient solution for mosquito vector control.
                 </p>
             </div>
 
             {/* Key Features */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                     <span className="text-lg">✨</span>
                     Key Features
                 </h2>
                 <div className="grid md:grid-cols-2 gap-2">
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">🤖</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">🤖</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">YOLOv8 AI Detection</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Advanced mosquito larvae identification system</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">YOLOv8 AI Detection</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Advanced mosquito larvae identification system</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">📡</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">📡</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">Real-time Telemetry</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Live GPS mapping and drone status monitoring</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">Real-time Telemetry</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Live GPS mapping and drone status monitoring</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">💊</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">💊</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">Automated Dispenser</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Precision larvicide deployment control</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">Automated Dispenser</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Precision larvicide deployment control</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">🗺️</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">🗺️</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">Mission Planning</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Complete setup and summary interface</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">Mission Planning</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Complete setup and summary interface</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">📊</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">📊</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">Data Analytics</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Comprehensive logging and visualization</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">Data Analytics</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Comprehensive logging and visualization</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <span className="text-gcs-primary text-base mt-0.5">🎮</span>
+                        <span className="text-gcs-primary text-sm mt-0.5">🎮</span>
                         <div>
-                            <h3 className="font-semibold text-xs text-gcs-text-dark dark:text-white">Live Mission Control</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Real-time mission monitoring and control</p>
+                            <h3 className="font-semibold text-sm text-gcs-text-dark dark:text-white">Live Mission Control</h3>
+                            <p className="text-[11px] text-gray-600 dark:text-gray-400">Real-time mission monitoring and control</p>
                         </div>
                     </div>
                 </div>
@@ -83,11 +83,11 @@ const AboutPanel: React.FC = () => {
 
             {/* Objectives */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                     <span className="text-lg">🎯</span>
                     Objectives & Purpose
                 </h2>
-                <div className="space-y-1.5 text-xs text-gray-700 dark:text-gray-300">
+                <div className="space-y-1.5 text-[11px] text-gray-700 dark:text-gray-300">
                     <div className="flex items-start gap-2">
                         <span className="text-gcs-primary mt-0.5">•</span>
                         <p>To provide an efficient and automated solution for mosquito vector control</p>
@@ -110,11 +110,11 @@ const AboutPanel: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-4">
                 {/* Development Team */}
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                         <span className="text-lg">👥</span>
                         Development Team
                     </h2>
-                    <div className="space-y-1.5 text-xs">
+                    <div className="space-y-1.5 text-[11px]">
                         <div>
                             <p className="font-semibold text-gcs-primary">Developed by:</p>
                             <p className="text-gray-700 dark:text-gray-300">Catelyn Joy Morco, Gerikah Alday, Alexa Babiera, and Charles David Bernido</p>
@@ -136,11 +136,11 @@ const AboutPanel: React.FC = () => {
 
                 {/* Technical Stack */}
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                    <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                         <span className="text-lg">🔧</span>
                         Technical Stack
                     </h2>
-                    <div className="space-y-1.5 text-xs">
+                    <div className="space-y-1.5 text-[11px]">
                         <div>
                             <p className="font-semibold text-gcs-primary">Frontend:</p>
                             <p className="text-gray-700 dark:text-gray-300">React, TypeScript, Tailwind CSS, Leaflet</p>
@@ -163,24 +163,24 @@ const AboutPanel: React.FC = () => {
 
             {/* Acknowledgments */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-                <h2 className="text-base font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white mb-2 flex items-center gap-2">
                     <span className="text-lg">🙏</span>
                     Acknowledgments
                 </h2>
-                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
                     We would like to express our gratitude to our mentors, the Polytechnic University of the Philippines, and all collaborating organizations including local government units (LGUs), CAAP, and FPA for their support in making this project possible.
                 </p>
             </div>
 
             {/* Footer */}
             <div className="bg-gray-100 dark:bg-gray-900/50 p-3 rounded-xl text-center">
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">© 2025 Smart Mosquito Control Drone Project</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Contact: smartdroneproject@gmail.com</p>
+                <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">© 2025 Smart Mosquito Control Drone Project</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Contact: smartdroneproject@gmail.com</p>
                 <div className="flex justify-center gap-4 mt-2">
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-[11px] text-gray-600 dark:text-gray-400">
                         <span className="font-semibold">Version:</span> 1.0.0
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-[11px] text-gray-600 dark:text-gray-400">
                         <span className="font-semibold">Release:</span> October 2025
                     </div>
                 </div>

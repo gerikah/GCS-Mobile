@@ -1,18 +1,17 @@
 import React from 'react';
 import type { OverviewStat } from '../types';
 
-const OverviewCard: React.FC<OverviewStat> = ({ icon, label, value, subtext }) => {
+const OverviewCard: React.FC<OverviewStat> = ({ icon, label, value }) => {
   return (
-    <div className="bg-gcs-card dark:bg-gray-800 p-3 rounded-xl shadow-sm flex flex-col">
-      <div className="flex items-center mb-2">
-        <div className="w-7 h-7 rounded-full bg-gcs-primary/10 flex items-center justify-center">
-            {icon}
+    <div className="flex min-h-[72px] flex-col rounded-xl bg-gcs-card p-2 text-black shadow-sm dark:bg-gray-800">
+      <div className="flex h-full flex-col items-start gap-1 text-left">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gcs-primary/10">
+          {icon}
         </div>
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-        <p className="text-lg font-bold text-gcs-text-dark dark:text-white mt-0.5">{value}</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">{subtext}</p>
+        <div className="flex flex-1 items-center justify-start">
+          <p className="text-lg font-bold text-black dark:text-white">{value}</p>
+        </div>
+        <p className="truncate whitespace-nowrap text-[11px] text-black dark:text-gray-400">{label}</p>
       </div>
     </div>
   );

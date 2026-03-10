@@ -1,25 +1,23 @@
 import React from 'react';
 import OverviewCard from './AttitudeIndicator';
 import MissionHistory from './MissionHistory';
-import PreFlightPanel from './ActionButtons';
-import type { OverviewStat, Mission, LiveTelemetry } from '../types';
+import type { OverviewStat, Mission } from '../types';
 
 // SVG Icons for Overview Cards
-const DroneIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gcs-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5,9A7.5,7.5,0,1,1,12,1.5,7.5,7.5,0,0,1,19.5,9Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L12 22.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L1.5 9" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L22.5 9" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L6.3 3.3" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L17.7 3.3" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L6.3 14.7" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9 L17.7 14.7" />
+const FlightsIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gcs-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+        <circle cx="7" cy="7" r="2.5" />
+        <circle cx="17" cy="7" r="2.5" />
+        <circle cx="7" cy="17" r="2.5" />
+        <circle cx="17" cy="17" r="2.5" />
+        <rect x="9.5" y="9.5" width="5" height="5" rx="1.2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.8 8.8L10 10M15.2 8.8L14 10M8.8 15.2L10 14M15.2 15.2L14 14" />
     </svg>
 );
 const ClockIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gcs-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gcs-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+        <circle cx="12" cy="13" r="7" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 13V9.5M12 13l2.5 2.5M9.5 3h5" />
     </svg>
 );
 const BatteryIcon = () => (
@@ -31,37 +29,29 @@ const BatteryIcon = () => (
 interface DashboardViewProps {
     overviewStats: Omit<OverviewStat, 'icon'>[];
     missions: Mission[];
-    onMissionSetup: () => void;
-    telemetry: LiveTelemetry;
-    setArmedState: (isArmed: boolean) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ overviewStats: rawStats, missions, onMissionSetup, telemetry, setArmedState }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ overviewStats: rawStats, missions }) => {
     const icons: { [key: string]: React.ReactNode } = {
-        flights: <DroneIcon />,
+        flights: <FlightsIcon />,
         flightTime: <ClockIcon />,
         battery: <BatteryIcon />,
     };
     const overviewStats: OverviewStat[] = rawStats.map(stat => ({ ...stat, icon: icons[stat.id] || <div /> }));
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col overflow-hidden">
             <div className="flex-shrink-0">
-                <h2 className="text-lg font-bold text-gcs-text-dark dark:text-white">Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-2">
+                <h2 className="text-sm font-bold text-gray-100">Overview</h2>
+                <div className="mt-2 grid grid-cols-3 gap-2">
                     {overviewStats.map(stat => (
                         <OverviewCard key={stat.id} {...stat} />
                     ))}
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0">
-                <div className="lg:col-span-2 min-h-0">
-                    <MissionHistory missions={missions} />
-                </div>
-                <div className="flex flex-col min-h-0">
-                    <PreFlightPanel onMissionSetup={onMissionSetup} telemetry={telemetry} setArmedState={setArmedState} />
-                </div>
+            <div className="mt-2 min-h-0 flex-1 overflow-hidden">
+                <MissionHistory missions={missions} />
             </div>
         </div>
     );

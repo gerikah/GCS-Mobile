@@ -36,11 +36,11 @@ const MiniMapView: React.FC<{ track: { lat: number; lon: number }[] | undefined 
     }, [track]);
 
     const MapIcon = () => (
-        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
     );
 
     return (
-        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="h-10 w-10 flex-shrink-0 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
             {points ? (
                 <svg viewBox="0 0 100 100" className="w-full h-full p-1">
                     <path d={points} fill="none" stroke="#F97316" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
@@ -54,34 +54,34 @@ const MiniMapView: React.FC<{ track: { lat: number; lon: number }[] | undefined 
 
 
 const MissionHistory: React.FC<MissionHistoryProps> = ({ missions }) => {
-    const recentMissions = missions.slice(0, 5);
+    const recentMissions = missions.slice(0, 3);
 
     return (
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm h-full flex flex-col">
-            <h3 className="text-base font-bold text-gcs-text-dark dark:text-white mb-3">Recent Mission Logs</h3>
-            <div className="flex-grow overflow-y-auto pr-2 -mr-2 space-y-2">
+        <div className="bg-white dark:bg-gray-800 p-2.5 rounded-t-xl rounded-b-none shadow-sm h-full flex flex-col">
+            <h3 className="mb-1.5 text-[11px] font-bold text-black dark:text-white">Recent Mission Logs</h3>
+            <div className="flex-grow space-y-1.5">
                 {recentMissions.length > 0 ? recentMissions.map(mission => (
-                    <div key={mission.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors">
+                    <div key={mission.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors">
                         <MiniMapView track={mission.gpsTrack} />
                         <div className="flex-1 grid grid-cols-3 items-center gap-2">
                             <div>
-                                <p className="font-semibold text-sm text-gcs-text-dark dark:text-gray-200 truncate">{mission.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{mission.date}</p>
+                                <p className="truncate text-[11px] font-semibold text-black dark:text-gray-200">{mission.name}</p>
+                                <p className="text-[11px] text-black dark:text-gray-400">{mission.date}</p>
                             </div>
                             <div className="flex justify-center">
-                                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full ${mission.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'}`}>
-                                    <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${mission.status === 'Completed' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
+                                <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[11px] font-semibold text-orange-800 dark:bg-orange-900/50 dark:text-orange-300">
+                                    <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-orange-500"></span>
                                     {mission.status}
                                 </span>
                             </div>
                             <div className="text-right">
-                                <p className="font-semibold text-sm text-gcs-text-dark dark:text-gray-200">{mission.duration}</p>
+                                <p className="text-[11px] font-semibold text-black dark:text-gray-200">{mission.duration}</p>
                             </div>
                         </div>
                     </div>
                 )) : (
-                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                        <p className="text-sm">No mission logs available.</p>
+                    <div className="flex items-center justify-center h-full text-black dark:text-gray-400">
+                        <p className="text-[11px]">No mission logs</p>
                     </div>
                 )}
             </div>
