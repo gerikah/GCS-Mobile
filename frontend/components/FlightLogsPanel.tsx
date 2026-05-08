@@ -1,87 +1,145 @@
 import React, { useMemo, useState } from 'react';
-import type { Mission } from 'types';
+import { Activity, ArrowLeft, Bot, CalendarDays, Cpu, Download, FileText, MapPin, Search, Signal, SlidersHorizontal, X } from 'lucide-react';
+import type { Mission } from '../types';
 import MissionTrackMap from './MissionTrackMap';
 import { downloadMissionReport } from '../utils/downloadReport';
+import { downloadGpx } from '../utils/downloadGpx';
 
-const FilterIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-  </svg>
-);
-
-const ExportIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
-
-const SearchIcon = () => (
-  <svg className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-  </svg>
-);
-
-const ChevronRight = () => (
-  <span className="rounded-md px-1.5 py-1 text-[11px] font-semibold text-gray-700 dark:text-gray-200">&gt;</span>
-);
+// IMPORTANT: Change this to your computer's Wi-Fi IP address!
+const API_URL = 'http://192.168.254.189:8080';
 
 interface FlightLogsPanelProps {
   missions: Mission[];
   mapStyle: string;
 }
 
-const sampleMissions: Mission[] = [
-  {
-    id: 'sample-1',
-    name: 'Sample Mission 0.0',
-    date: 'Mar 4, 2026',
-    duration: '0.0',
-    status: 'Completed',
-    location: '0.0',
-    gpsTrack: [
-      { lat: 14.5995, lon: 120.9842 },
-      { lat: 14.6001, lon: 120.9851 },
-    ],
-    detectedSites: [],
-  },
-  {
-    id: 'sample-2',
-    name: 'Sample Mission 0.0',
-    date: 'Mar 4, 2026',
-    duration: '0.0',
-    status: 'Completed',
-    location: '0.0',
-    gpsTrack: [
-      { lat: 14.5995, lon: 120.9842 },
-      { lat: 14.6001, lon: 120.9851 },
-    ],
-    detectedSites: [],
-  },
-  {
-    id: 'sample-3',
-    name: 'Sample Mission 0.0',
-    date: 'Mar 4, 2026',
-    duration: '0.0',
-    status: 'Completed',
-    location: '0.0',
-    gpsTrack: [
-      { lat: 14.5995, lon: 120.9842 },
-      { lat: 14.6001, lon: 120.9851 },
-    ],
-    detectedSites: [],
-  },
-];
+type DetailTab = 'overview' | 'ai' | 'hardware' | 'stream';
+
+const formatDuration = (duration: string | null | undefined): string => {
+  const seconds = Number(duration || 0);
+  if (Number.isNaN(seconds)) return duration || '0 secs';
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return minutes > 0 ? `${minutes}m ${String(remainder).padStart(2, '0')}s` : `${seconds}s`;
+};
+
+const shortDate = (dateValue: string): string => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+  return date.toLocaleString([], { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+};
+
+const flightCode = (mission: Mission): string => {
+  if (mission.name?.trim()) return mission.name;
+  return `FLT_${mission.id.slice(0, 8).toUpperCase()}`;
+};
+
+const statusClassName = (status: string): string => {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('complete')) return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
+  if (normalized.includes('interrupt') || normalized.includes('abort')) return 'border-gcs-primary/40 bg-gcs-primary/10 text-gcs-primary';
+  return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300';
+};
+
+const StatBlock: React.FC<{ label: string; value: string | number; accent?: boolean }> = ({ label, value, accent }) => (
+  <div className="rounded-sm border border-white/5 bg-[#101521] p-3">
+    <p className="font-mono text-[8px] font-bold uppercase tracking-[0.16em] text-[#65728b]">{label}</p>
+    <p className={`mt-2 font-mono text-sm font-black ${accent ? 'text-emerald-400' : 'text-white'}`}>{value}</p>
+  </div>
+);
+
+const TabButton: React.FC<{
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}> = ({ active, children, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`shrink-0 border-b-2 px-3 py-3 font-mono text-[9px] font-black uppercase tracking-[0.18em] transition-colors ${
+      active ? 'border-gcs-primary text-gcs-primary' : 'border-transparent text-[#77839d]'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const HardwareRows: React.FC<{ mission: Mission }> = ({ mission }) => {
+  const telemetry = mission.rawTelemetry || [];
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[620px] w-full border-collapse font-mono text-[10px]">
+        <thead>
+          <tr className="bg-[#111827] text-left uppercase tracking-[0.14em] text-[#7b879e]">
+            <th className="p-3">Logged_At</th>
+            <th className="p-3">GPS_Coords</th>
+            <th className="p-3">Alt_Lidar</th>
+            <th className="p-3">Heading</th>
+            <th className="p-3">Volt</th>
+            <th className="p-3">Armed</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/5">
+          {telemetry.length > 0 ? (
+            telemetry.slice(0, 100).map((t, index) => (
+              <tr key={index} className="text-gray-200 hover:bg-white/5">
+                <td className="p-3">{new Date(t.logged_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</td>
+                <td className="p-3">{t.latitude?.toFixed(6) || '0'}, {t.longitude?.toFixed(6) || '0'}</td>
+                <td className="p-3">{t.altitude_lidar_m?.toFixed(2) || '0'}M</td>
+                <td className="p-3">{t.heading || '0'}°</td>
+                <td className="p-3 text-emerald-400">{t.battery_voltage?.toFixed(2) || '0'}V</td>
+                <td className="p-3">{t.is_armed ? 'YES' : 'NO'}</td>
+              </tr>
+            ))
+          ) : (
+            <tr><td colSpan={6} className="p-4 text-center text-[#7b879e]">No hardware telemetry logged</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const FlightLogsPanel: React.FC<FlightLogsPanelProps> = ({ missions, mapStyle }) => {
-  const sourceMissions = useMemo(() => (missions.length > 0 ? missions : sampleMissions), [missions]);
-  const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
-
+  const sourceMissions = missions;
+  const [selectedMissionId, setSelectedMissionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState('Last Mission');
+  const [statusFilter, setStatusFilter] = useState('Completed');
+  const [targetFilter, setTargetFilter] = useState('All_Objects');
+  const [sortOrder, setSortOrder] = useState('Newest');
+  const [showFilters, setShowFilters] = useState(true);
+  const [activeTab, setActiveTab] = useState<DetailTab>('hardware');
+  const [missionDetails, setMissionDetails] = useState<Record<string, Mission>>({});
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const filteredMissions = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    const filtered = sourceMissions.filter(mission => {
+      const matchesText = `${mission.name} ${mission.location} ${mission.status}`.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'All' || mission.status === statusFilter;
+      const hasTargets = (mission.totalDetections || mission.detectedSites?.length || 0) > 0;
+      const matchesTarget = targetFilter === 'All_Objects' || (targetFilter === 'Detected_Only' ? hasTargets : !hasTargets);
+      return matchesText && matchesStatus && matchesTarget;
+    });
+
+    return filtered.sort((a, b) => {
+      const aTime = new Date(a.date).getTime() || 0;
+      const bTime = new Date(b.date).getTime() || 0;
+      return sortOrder === 'Newest' ? bTime - aTime : aTime - bTime;
+    });
+  }, [sourceMissions, searchQuery, statusFilter, targetFilter, sortOrder]);
+
+  const selectedMission = useMemo(() => {
+    if (!selectedMissionId) return null;
+    return missionDetails[selectedMissionId] || filteredMissions.find(mission => mission.id === selectedMissionId) || null;
+  }, [filteredMissions, missionDetails, selectedMissionId]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('All');
+    setTargetFilter('All_Objects');
+    setSortOrder('Newest');
+  };
 
   const handleDownloadReport = () => {
     if (!selectedMission) {
@@ -91,203 +149,271 @@ const FlightLogsPanel: React.FC<FlightLogsPanelProps> = ({ missions, mapStyle })
     downloadMissionReport(selectedMission);
   };
 
-  const handleExport = () => {
-    alert('Exporting all logs...');
+  const handleDownloadTrack = () => {
+    if (!selectedMission?.gpsTrack?.length) {
+      alert('No GPS track available');
+      return;
+    }
+    downloadGpx(selectedMission.gpsTrack, flightCode(selectedMission));
   };
 
-  const filteredMissions = useMemo(() => {
-    const now = new Date();
+  const handleSelectMission = async (mission: Mission) => {
+    const id = String(mission.id);
+    setSelectedMissionId(id);
+    setActiveTab('hardware');
 
-    return sourceMissions.filter(mission => {
-      if (!mission.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
+    if (missionDetails[id]) return;
 
-      if (statusFilter !== 'All' && mission.status !== statusFilter) {
-        return false;
-      }
+    setDetailLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/missions/${encodeURIComponent(id)}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const detail: Mission = await response.json();
+      setMissionDetails(prev => ({ ...prev, [id]: detail }));
+    } catch (error) {
+      console.error('Failed to fetch mission detail:', error);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
-      if (dateFilter !== 'Last Mission') {
-        const missionDate = new Date(mission.date);
-        if (isNaN(missionDate.getTime())) return false;
+  const renderDetail = () => {
+    if (!selectedMission) {
+      return <div className="flex min-h-[220px] items-center justify-center font-mono text-[11px] uppercase tracking-[0.18em] text-[#77839d]">No registry match</div>;
+    }
 
-        const diffTime = now.getTime() - missionDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const track = selectedMission.gpsTrack || [];
+    const detections = selectedMission.totalDetections || selectedMission.detectedSites?.length || 0;
+    const telemetry = selectedMission.rawTelemetry || [];
 
-        if (dateFilter === 'Last 7 Days' && diffDays > 7) return false;
-        if (dateFilter === 'Last 30 Days' && diffDays > 30) return false;
-      }
+    if (activeTab === 'overview') {
+      return (
+        <div className="space-y-3 p-4">
+          <div className="h-44 overflow-hidden rounded border border-white/10 bg-[#0b0f19]">
+            <MissionTrackMap track={track} mapStyle={mapStyle} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <StatBlock label="Sortie_Status" value={selectedMission.status} accent />
+            <StatBlock label="Chrono_Date" value={shortDate(selectedMission.date)} />
+            <StatBlock label="Min_Dur" value={formatDuration(selectedMission.duration)} />
+            <StatBlock label="Location" value={selectedMission.location || 'N/A'} />
+          </div>
+        </div>
+      );
+    }
 
-      return true;
-    });
-  }, [sourceMissions, searchQuery, statusFilter, dateFilter]);
+    if (activeTab === 'ai') {
+      return (
+        <div className="space-y-3 p-4">
+          <div className="grid grid-cols-2 gap-2">
+            <StatBlock label="Object_Targets" value={detections} accent />
+            <StatBlock label="Spray_Events" value={selectedMission.totalSprays || 0} />
+          </div>
+          <div className="rounded-sm border border-white/10 bg-[#101521] p-3">
+            <h4 className="border-l-2 border-gcs-primary pl-2 font-mono text-[11px] font-black uppercase tracking-[0.2em] text-white">AI_Databank_</h4>
+            <div className="mt-3 space-y-2">
+              {selectedMission.detectedSites?.length ? selectedMission.detectedSites.map((site, index) => (
+                <div key={`${site.object}-${index}`} className="rounded border border-white/5 bg-[#171b2d] p-2">
+                  <p className="font-mono text-[11px] font-bold text-gcs-primary">{site.object}</p>
+                  <p className="mt-1 font-mono text-[10px] text-[#8792aa]">{site.type} · BBox {site.bbox ? site.bbox.map(coord => coord.toFixed(2)).join(', ') : 'N/A'}</p>
+                </div>
+              )) : (
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#77839d]">No detected objects archived</p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-  if (selectedMission) {
-    const displayTrack = selectedMission.gpsTrack || [];
+    if (activeTab === 'stream') {
+      return (
+        <div className="grid gap-2 p-4">
+          <StatBlock label="Stream_Status" value="Healthy" accent />
+          <StatBlock label="Laptop_Link" value="Synchronized" />
+          <StatBlock label="Stream_PID" value={`PID_${selectedMission.id.slice(0, 5).toUpperCase()}`} />
+          <StatBlock label="Frame_Quality" value={`${selectedMission.sprayEfficiency || 0}%`} accent />
+        </div>
+      );
+    }
 
     return (
-      <div className="h-full animate-fade-in">
-        <div className="flex h-full flex-col rounded-t-xl rounded-b-none bg-white p-3 shadow-sm dark:bg-gray-800">
-          <div className="mb-1 flex items-center gap-2">
-            <button
-              onClick={() => setSelectedMission(null)}
-              className="rounded-md px-1.5 py-1 text-[11px] font-semibold text-gray-700 dark:text-gray-200"
-              aria-label="Back to mission history"
-            >
-              &lt;
-            </button>
-            <h2 className="text-sm font-bold dark:text-white">{selectedMission.name}</h2>
-          </div>
-
-          <p className="mb-1.5 text-[11px] text-gray-500 dark:text-gray-400">{selectedMission.date}</p>
-
-          <div className="h-44 w-full overflow-hidden rounded-lg bg-gray-700">
-            <MissionTrackMap track={displayTrack} mapStyle={mapStyle} />
-          </div>
-
-          <h3 className="mb-1 mt-2 text-sm font-bold dark:text-white">Detected Objects</h3>
-          <div className="min-h-0 w-full flex-1 overflow-y-auto rounded-lg bg-gray-100 p-2 dark:bg-gray-900">
-            {(!selectedMission.detectedSites || selectedMission.detectedSites.length === 0) ? (
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">No mission logs</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {selectedMission.detectedSites.map((site, index) => (
-                  <li key={index} className="rounded bg-white p-1.5 shadow-sm dark:bg-gray-800">
-                    <p className="text-[11px] font-semibold text-orange-600">
-                      {site.object}
-                      <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400"> ({site.type})</span>
-                    </p>
-                    <p className="font-mono text-[11px] text-gray-600 dark:text-gray-300">
-                      BBox: {site.bbox ? site.bbox.map(coord => coord.toFixed(4)).join(', ') : 'N/A'}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="mt-2 flex items-end justify-between gap-2">
-            <div>
-              <InfoItem label="Status" value={selectedMission.status} />
-              <InfoItem label="Duration" value={`${selectedMission.duration || '0.0'} secs`} />
-              <InfoItem label="Location" value={selectedMission.location || '0.0'} />
-            </div>
-            <button
-              onClick={handleDownloadReport}
-              className="rounded-lg bg-orange-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow"
-            >
-              Download Report
-            </button>
-          </div>
+      <div className="space-y-4 p-4">
+        <h4 className="border-l-2 border-gcs-primary pl-3 font-mono text-[12px] font-black uppercase tracking-[0.24em] text-white">Hardware_Telemetry_Databank</h4>
+        {detailLoading && (
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#77839d]">Loading full telemetry...</p>
+        )}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <StatBlock label="Max_Altitude" value={`${(selectedMission.coverageArea || 0.16).toFixed(2)}M`} />
+          <StatBlock label="Min_Battery" value={telemetry.length > 0 ? `${Math.min(...telemetry.map(t => t.battery_voltage || 24)).toFixed(2)}V` : 'N/A'} accent />
+          <StatBlock label="Avg_Heading" value={telemetry.length > 0 ? `${Math.round(telemetry.reduce((a, t) => a + (t.heading || 0), 0) / telemetry.length)}°` : 'N/A'} />
+          <StatBlock label="Data_Points" value={telemetry.length} />
         </div>
+        <HardwareRows mission={selectedMission} />
       </div>
     );
-  }
+  };
 
   return (
-    <div className="h-full animate-fade-in">
-      <div className="flex h-full flex-col rounded-t-xl rounded-b-none bg-white p-3 shadow-sm dark:bg-gray-800">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-black dark:text-white">Mission History</h2>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                showFilters
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-600/30 dark:text-orange-300'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <FilterIcon />
-              <span className="ml-1">Filters</span>
-            </button>
-            <button
-              onClick={handleExport}
-              className="flex items-center rounded-md px-2 py-1 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              <ExportIcon />
-              <span className="ml-1">Export</span>
+    <div className="flex flex-col min-h-0 h-full animate-fade-in font-mono gap-3">
+      {!selectedMission && (
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6d7890]" />
+            <input
+              type="text"
+              placeholder="Search registry..."
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              className="h-10 w-full rounded-sm border border-white/10 bg-[#090d17] pl-10 pr-3 font-mono text-[11px] uppercase tracking-[0.12em] text-white outline-none focus:border-gcs-primary"
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(value => !value)}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded border transition-colors ${showFilters ? 'border-gcs-primary bg-gcs-primary/10 text-gcs-primary' : 'border-white/10 bg-[#111521] text-[#8792aa]'}`}
+            aria-label="Toggle registry filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {!selectedMission && showFilters && (
+        <section className="flex-shrink-0 rounded-md border border-white/10 bg-[#111521] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] animate-fade-in-fast">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="min-w-0">
+              <span className="mb-1 block font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-[#65728b]">Sortie_Status</span>
+              <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="h-10 w-full rounded-sm border border-white/10 bg-[#090d17] px-3 font-mono text-[10px] uppercase text-white">
+                <option>All</option>
+                <option>Completed</option>
+                <option>Interrupted</option>
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="mb-1 block font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-[#65728b]">Object_Target</span>
+              <select value={targetFilter} onChange={event => setTargetFilter(event.target.value)} className="h-10 w-full rounded-sm border border-white/10 bg-[#090d17] px-3 font-mono text-[10px] uppercase text-white">
+                <option>All_Objects</option>
+                <option>Detected_Only</option>
+                <option>Clear_Only</option>
+              </select>
+            </label>
+            <label className="min-w-0">
+              <span className="mb-1 block font-mono text-[8px] font-bold uppercase tracking-[0.18em] text-[#65728b]">Sort_Order</span>
+              <select value={sortOrder} onChange={event => setSortOrder(event.target.value)} className="h-10 w-full rounded-sm border border-white/10 bg-[#090d17] px-3 font-mono text-[10px] uppercase text-white">
+                <option>Newest</option>
+                <option>Oldest</option>
+              </select>
+            </label>
+            <button onClick={clearFilters} className="mt-4 flex h-10 items-center justify-center gap-2 rounded-sm border border-white/10 bg-[#090d17] font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#8792aa]">
+              <X className="h-4 w-4" />
+              Clear
             </button>
           </div>
-        </div>
+          <p className="mt-3 text-right font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#65728b]">
+            Registry_Matches <span className="text-gcs-primary">{filteredMissions.length}</span>
+          </p>
+        </section>
+      )}
 
-        <div className="relative mb-2">
-          <input
-            type="text"
-            placeholder="Search missions..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-transparent bg-gray-100 p-1.5 pl-7 text-[11px] dark:bg-gray-700 dark:text-white focus:border-orange-500 focus:outline-none focus:ring-0"
-          />
-          <SearchIcon />
-        </div>
-
-        {showFilters && (
-          <div className="mb-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700/50 animate-fade-in-fast">
-            <div className="grid grid-cols-1 gap-2 text-[11px] sm:grid-cols-2">
-              <div className="min-w-0">
-                <label className="mb-1 block text-[11px] font-medium text-gray-600 dark:text-gray-300">Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  className="w-full max-w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] leading-tight dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+      <div className="flex-1 flex flex-col min-h-0">
+        {!selectedMission && (
+        <section className="flex flex-col min-h-0 rounded-md border border-white/10 bg-[#1a1e31] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <header className="flex items-center justify-between border-b border-white/5 p-3 flex-shrink-0">
+            <h3 className="font-mono text-[11px] font-black uppercase tracking-[0.18em] text-[#8c97ad]">Log_Archive</h3>
+            <span className="font-mono text-[10px] font-black uppercase tracking-[0.14em] text-gcs-primary">{filteredMissions.length} Files</span>
+          </header>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {filteredMissions.map(mission => {
+              const active = selectedMission?.id === mission.id;
+              return (
+                <button
+                  key={mission.id}
+                  onClick={() => handleSelectMission(mission)}
+                  className={`w-full border-l-4 p-4 text-left transition-colors ${
+                    active ? 'border-gcs-primary bg-[#202538]' : 'border-transparent bg-transparent hover:bg-[#171c2d]'
+                  }`}
                 >
-                  <option>All</option>
-                  <option>Completed</option>
-                  <option>Interrupted</option>
-                </select>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-[12px] font-black uppercase tracking-[0.06em] text-white">{flightCode(mission)}</p>
+                      <p className="mt-2 font-mono text-[10px] text-[#7d879d]">{shortDate(mission.date)}</p>
+                      <p className="mt-2 flex items-center gap-1 font-mono text-[10px] font-bold uppercase text-gray-200">
+                        <MapPin className="h-3 w-3 text-[#77839d]" />
+                        {mission.location || 'Unknown Zone'}
+                      </p>
+                    </div>
+                    <span className={`rounded-sm border px-2 py-1 font-mono text-[9px] font-black uppercase tracking-[0.08em] ${statusClassName(mission.status)}`}>{mission.status}</span>
+                  </div>
+                </button>
+              );
+            })}
+            {filteredMissions.length === 0 && (
+              <div className="flex h-40 items-center justify-center px-4 text-center font-mono text-[11px] uppercase tracking-[0.16em] text-[#77839d]">
+                No log archive files match the active filters
               </div>
-              <div className="min-w-0">
-                <label className="mb-1 block text-[11px] font-medium text-gray-600 dark:text-gray-300">Date Range</label>
-                <select
-                  value={dateFilter}
-                  onChange={e => setDateFilter(e.target.value)}
-                  className="w-full max-w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] leading-tight dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                >
-                  <option>Last Mission</option>
-                  <option>Last 7 Days</option>
-                  <option>Last 30 Days</option>
-                </select>
-              </div>
-            </div>
+            )}
           </div>
+        </section>
         )}
 
-        <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-          {filteredMissions.map(mission => (
-            <div
-              key={mission.id}
-              onClick={() => setSelectedMission(mission)}
-              className="flex cursor-pointer overflow-hidden rounded-xl bg-white transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/60"
-            >
-              <div className="flex-1 p-2">
-                <p className="truncate text-[11px] font-semibold text-black dark:text-white">{mission.name}</p>
-                <p className="text-[11px] text-black dark:text-gray-400">{mission.date} - {mission.duration || '0.0'} secs</p>
-                <p className="mt-0.5 text-[11px] font-semibold text-orange-600">{mission.status}</p>
+        {selectedMission && (
+        <section className="flex-1 min-h-0 overflow-hidden rounded-md border border-white/10 bg-[#1a1e31] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] flex flex-col">
+          <header className="border-b border-white/5 flex-shrink-0">
+            <div className="flex items-center justify-between gap-3 p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  onClick={() => setSelectedMissionId(null)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-[#101521] text-[#8792aa]"
+                  aria-label="Back to log archive"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <div className="min-w-0">
+                  <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-[#77839d]">Active_Log</p>
+                  <h3 className="truncate font-mono text-sm font-black uppercase italic tracking-[0.12em] text-gcs-primary">
+                    {flightCode(selectedMission)}
+                  </h3>
+                </div>
               </div>
-              <div className="flex items-center justify-end px-2">
-                <ChevronRight />
+              <div className="flex gap-2">
+                <button onClick={handleDownloadTrack} className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/10 bg-[#101521] text-[#8792aa]" aria-label="Download GPX track">
+                  <Activity className="h-4 w-4" />
+                </button>
+                <button onClick={handleDownloadReport} className="flex h-9 w-9 items-center justify-center rounded-sm border border-gcs-primary/40 bg-gcs-primary/10 text-gcs-primary" aria-label="Download mission report">
+                  <Download className="h-4 w-4" />
+                </button>
               </div>
             </div>
-          ))}
+            <nav className="flex overflow-x-auto px-1">
+              <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')}><FileText className="mr-1 inline h-3 w-3" />Overview_</TabButton>
+              <TabButton active={activeTab === 'ai'} onClick={() => setActiveTab('ai')}><Bot className="mr-1 inline h-3 w-3" />AI_Databank_</TabButton>
+              <TabButton active={activeTab === 'hardware'} onClick={() => setActiveTab('hardware')}><Cpu className="mr-1 inline h-3 w-3" />Hardware_Metrics_</TabButton>
+              <TabButton active={activeTab === 'stream'} onClick={() => setActiveTab('stream')}><Signal className="mr-1 inline h-3 w-3" />Stream_Health_</TabButton>
+            </nav>
+          </header>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {renderDetail()}
+          </div>
+        </section>
+        )}
+      </div>
 
-          {filteredMissions.length === 0 && (
-            <div className="flex h-20 items-center justify-center rounded-xl bg-white text-[11px] text-black dark:bg-gray-800 dark:text-gray-300">No mission logs</div>
-          )}
-
-          <div className="h-20 rounded-xl bg-white dark:bg-gray-800" />
-          <div className="h-20 rounded-xl bg-white dark:bg-gray-800" />
-          <div className="h-20 rounded-xl bg-white dark:bg-gray-800" />
+      {selectedMission && (
+      <div className="flex-shrink-0 grid grid-cols-2 gap-2">
+        <div className="rounded-md border border-white/10 bg-[#111521] p-3">
+          <CalendarDays className="mb-2 h-4 w-4 text-gcs-primary" />
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#77839d]">Chrono_Date</p>
+          <p className="mt-1 truncate font-mono text-[11px] font-black text-white">{selectedMission ? shortDate(selectedMission.date) : 'N/A'}</p>
+        </div>
+        <div className="rounded-md border border-white/10 bg-[#111521] p-3">
+          <Activity className="mb-2 h-4 w-4 text-gcs-primary" />
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#77839d]">Min_Dur</p>
+          <p className="mt-1 truncate font-mono text-[11px] font-black text-white">{selectedMission ? formatDuration(selectedMission.duration) : 'N/A'}</p>
         </div>
       </div>
+      )}
     </div>
   );
 };
-
-const InfoItem: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
-  <p className="text-[11px] text-gray-600 dark:text-gray-300">
-    {label}: <span className="font-semibold dark:text-white">{value}</span>
-  </p>
-);
 
 export default FlightLogsPanel;

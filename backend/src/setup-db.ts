@@ -53,37 +53,15 @@ async function setupDatabase() {
     `);
     console.log('✓ mission_logs table created/verified');
 
-    if (mission_plans_exists) {
-      console.log('✓ mission_plans table already exists - data will be preserved');
-    } else {
-      console.log('📝 Creating mission_plans table...');
-    }
-
-    // Create mission_plans table (safe - won't drop existing data)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS mission_plans (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        altitude NUMERIC,
-        speed NUMERIC,
-        waypoints JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    console.log('✓ mission_plans table created/verified');
-
     // Get row counts for verification
     const logsCountResult = await pool.query('SELECT COUNT(*) as count FROM mission_logs');
-    const plansCountResult = await pool.query('SELECT COUNT(*) as count FROM mission_plans');
     
     const logsCount = logsCountResult.rows[0].count;
-    const plansCount = plansCountResult.rows[0].count;
 
     console.log('\n========================================');
     console.log('📊 DATABASE VERIFICATION');
     console.log('========================================');
     console.log(`✓ mission_logs records: ${logsCount}`);
-    console.log(`✓ mission_plans records: ${plansCount}`);
     console.log('\n✅ Database setup complete! All data preserved.\n');
     
   } catch (error) {

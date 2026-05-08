@@ -11,7 +11,7 @@ const AnalyticsIcon = () => (
 );
 const LogsIcon = () => <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>;
 
-type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about' | 'account';
+type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about';
 
 interface NavItemProps {
     icon: React.ReactNode;
@@ -24,8 +24,8 @@ interface NavItemProps {
 const MobileNavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-semibold transition-colors ${
-      active ? 'bg-white text-gcs-text-dark shadow' : 'text-gcs-text-light'
+    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border border-transparent px-1 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] transition-colors ${
+      active ? 'border-gcs-primary/40 bg-gcs-primary/10 text-gcs-primary shadow-[0_0_18px_rgba(255,69,79,0.28)]' : 'text-[#75839e]'
     }`}
   >
     <span>{icon}</span>
@@ -40,10 +40,10 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   return (
-    <nav className="app-shell-bg fixed inset-x-0 bottom-0 z-40 border-t border-white/20 p-2 backdrop-blur" aria-label="Bottom navigation">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080a12]/95 p-2 backdrop-blur" aria-label="Bottom navigation">
       <div className="mx-auto grid grid-cols-3 gap-1">
         <MobileNavItem icon={<DashboardIcon />} label="Home" view="dashboard" active={currentView === 'dashboard'} onClick={() => onNavigate('dashboard')} />
-        <MobileNavItem icon={<AnalyticsIcon />} label="Stats" view="analytics" active={currentView === 'analytics'} onClick={() => onNavigate('analytics')} />
+        <MobileNavItem icon={<AnalyticsIcon />} label="Analytics" view="analytics" active={currentView === 'analytics'} onClick={() => onNavigate('analytics')} />
         <MobileNavItem icon={<LogsIcon />} label="Logs" view="flightLogs" active={currentView === 'flightLogs'} onClick={() => onNavigate('flightLogs')} />
       </div>
     </nav>

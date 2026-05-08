@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Ground Control Station',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'http',
+    cleartext: true
   }
 };
 

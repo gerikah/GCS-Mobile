@@ -1,138 +1,109 @@
 import React, { useMemo, useState } from 'react';
-import type { Mission } from 'types';
+import { Activity, Clock3, Droplet, Percent, PlusSquare, Target } from 'lucide-react';
+import type { Mission } from '../types';
 
-const MissionsIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l18-7-4.5 7L21 19l-6-2.5L10 21l1-6-8-3z" />
-  </svg>
-);
-
-const CoverageIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
-    <rect x="4" y="5" width="16" height="14" rx="2" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 9h8M8 12h8M8 15h5" />
-  </svg>
-);
-
-const SuccessIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
-    <circle cx="12" cy="12" r="8" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12.5l2.5 2.5 4.5-5" />
-  </svg>
-);
-
-const BarChart: React.FC<{ missions: Mission[] }> = ({ missions }) => {
-  const weeklyData = useMemo(() => {
-    const now = new Date();
-    const data = [
-      { label: '3 Wks Ago', value: 0 },
-      { label: '2 Wks Ago', value: 0 },
-      { label: 'Last Wk', value: 0 },
-      { label: 'This Wk', value: 0 },
-    ];
-
-    missions.forEach(mission => {
-      const missionDate = new Date(mission.date);
-      if (isNaN(missionDate.getTime()) || missionDate > now) return;
-
-      const diffTime = now.getTime() - missionDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays >= 0 && diffDays < 7) data[3].value++;
-      else if (diffDays >= 7 && diffDays < 14) data[2].value++;
-      else if (diffDays >= 14 && diffDays < 21) data[1].value++;
-      else if (diffDays >= 21 && diffDays < 28) data[0].value++;
-    });
-
-    return data;
-  }, [missions]);
-
-  const maxValue = Math.max(...weeklyData.map(d => d.value), 1) * 1.2;
-
-  if (missions.length === 0) {
-    return <div className="flex h-full items-center justify-center p-2 text-[11px] text-gray-500">No mission logs</div>;
-  }
-
-  return (
-    <div className="flex h-full items-end justify-around gap-2 px-2 pb-2 pt-4">
-      {weeklyData.map(item => (
-        <div key={item.label} className="flex flex-1 flex-col items-center">
-          <div className="relative flex h-full w-full items-end">
-            <div className="w-full rounded-t-sm bg-gcs-primary/20 transition-colors hover:bg-gcs-primary/40" style={{ height: `${(item.value / maxValue) * 100}%` }}>
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[11px] font-bold text-gcs-text-dark dark:text-white">{item.value.toFixed(1)}</span>
-            </div>
-          </div>
-          <span className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{item.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const parseDuration = (duration: string | null | undefined): number => {
+const parseDurationSeconds = (duration: string | null | undefined): number => {
   if (!duration) return 0;
-  const totalSeconds = parseInt(duration, 10);
-  if (isNaN(totalSeconds)) return 0;
-  return totalSeconds / 60;
+  const numericValue = Number(duration);
+  if (!Number.isNaN(numericValue)) return numericValue;
+  const parts = duration.split(':').map(Number);
+  if (parts.some(Number.isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
 };
 
-const LineChart: React.FC<{ missions: Mission[] }> = ({ missions }) => {
-  const data = useMemo(() => {
-    return missions
-      .slice(0, 10)
-      .reverse()
-      .map(m => parseDuration(m.duration));
-  }, [missions]);
+const formatUptime = (seconds: number): string => {
+  const totalMinutes = Math.max(0, Math.round(seconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}H ${String(minutes).padStart(2, '0')}M`;
+};
 
-  if (data.length < 2) {
-    return <div className="flex h-full items-center justify-center p-2 text-[11px] text-gray-500">No mission logs</div>;
-  }
-
-  const width = 300;
-  const height = 150;
-  const maxValue = Math.max(...data, 1) * 1.1;
-  const points = data.map((d, i) => `${(i / (data.length - 1)) * width},${height - (d / maxValue) * height}`).join(' ');
+const MetricCard: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sublabel: string;
+  description?: string;
+}> = ({ icon, label, value, sublabel, description }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
-    <div className="flex h-full items-center justify-center p-2">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full">
-        <polyline fill="none" stroke="#F97316" strokeWidth="2" points={points} />
-        {data.map((d, i) => (
-          <circle key={i} cx={(i / (data.length - 1)) * width} cy={height - (d / maxValue) * height} r="2.5" fill="#F97316" className="opacity-50 hover:opacity-100" />
-        ))}
-      </svg>
-    </div>
+    <section 
+      className="relative overflow-hidden rounded-md border border-white/10 bg-[#1a1e31] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <div className="pointer-events-none absolute right-2 top-1 font-mono text-3xl font-black text-white/[0.03]">#</div>
+      
+      {description && (
+        <button 
+          onClick={(e) => { e.preventDefault(); setShowTooltip(v => !v); }}
+          className="absolute right-2 top-2 z-10 flex h-4 w-4 items-center justify-center rounded-full border border-gcs-primary/40 bg-[#10131e] font-mono text-[9px] font-bold text-gcs-primary transition-colors hover:bg-gcs-primary/20 focus:outline-none"
+          aria-label="Show definition"
+        >
+          ?
+        </button>
+      )}
+
+      {showTooltip && description && (
+        <div 
+          className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b0e17]/95 p-3 text-center backdrop-blur-sm animate-fade-in border border-gcs-primary/60 shadow-[inset_0_0_15px_rgba(255,69,79,0.2)] rounded-md cursor-pointer"
+          onClick={() => setShowTooltip(false)}
+        >
+          <p className="font-mono text-[9px] leading-relaxed text-gcs-primary">
+            {description}
+          </p>
+        </div>
+      )}
+
+      <div className="flex h-full flex-col justify-between gap-2">
+        <p className="truncate font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-[#74809b]">{label}</p>
+        <div className="flex items-center gap-2">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-gcs-primary/20 bg-[#10131e] text-gcs-primary shadow-[0_0_26px_rgba(255,69,79,0.35)]">
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="font-mono text-base font-black tracking-[0.03em] text-white">{value}</p>
+          </div>
+        </div>
+        <p className="truncate font-mono text-[8px] uppercase tracking-[0.16em] text-[#69748d]">{sublabel}</p>
+      </div>
+    </section>
   );
 };
 
-const DonutChart: React.FC<{ percentage: number }> = ({ percentage }) => {
-  const size = 84;
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
+const TemporalChart: React.FC<{ values: number[], labels: string[] }> = ({ values, labels }) => {
+  const maxValue = Math.max(...values, 1);
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle className="text-gray-200 dark:text-gray-600" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size / 2} cy={size / 2} />
-        <circle
-          className="text-gcs-primary"
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          stroke="currentColor"
-          fill="transparent"
-          r={radius}
-          cx={size / 2}
-          cy={size / 2}
-          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-[11px] font-bold dark:text-white">{percentage.toFixed(1)}%</span>
-        <span className="text-[11px] text-gray-500 dark:text-gray-400">Completed</span>
+    <div className="relative h-[280px] p-4">
+      <div className="absolute inset-x-4 top-10 bottom-12 border border-white/[0.03] bg-[#171b2d]/40" />
+      <div className="relative z-10 flex h-full items-end justify-around gap-2 sm:gap-4 px-2 pb-8 pt-6">
+        {values.map((value, index) => {
+          // Use a square root scale with a minimum height so small values remain visible alongside massive ones
+          const height = value === 0 ? 4 : Math.max(12, Math.sqrt(value / maxValue) * 100);
+          const isCurrent = index === values.length - 1;
+
+          return (
+            <div key={labels[index]} className="flex h-full flex-1 flex-col items-center justify-end">
+              <div className="relative flex h-full w-full items-end justify-center border-b border-white/[0.04]">
+                {value > 0 && (
+                  <span className="absolute -top-5 font-mono text-[10px] font-bold text-gcs-primary">{value}</span>
+                )}
+                <div
+                  className={`w-full rounded-t-sm transition-all ${
+                    value > 0
+                      ? 'bg-gradient-to-t from-gcs-primary to-gcs-primary/30 shadow-[0_0_20px_rgba(255,69,79,0.35)]'
+                      : 'bg-[#232842] shadow-[0_0_12px_rgba(120,130,160,0.08)]'
+                  } ${isCurrent && value > 0 ? 'brightness-125' : ''}`}
+                  style={{ height: `${height}%` }}
+                />
+              </div>
+              <span className={`mt-2 font-mono text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.18em] ${isCurrent ? 'text-white' : 'text-[#74809b]'}`}>{labels[index]}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -142,149 +113,141 @@ interface AnalyticsPanelProps {
   missions: Mission[];
 }
 
-type DateRange = 'today' | 'week' | 'month';
-
-const FilterIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-  </svg>
-);
-
-const startOfDay = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate());
-
-const addDays = (value: Date, days: number) => new Date(value.getFullYear(), value.getMonth(), value.getDate() + days);
-
-const isInDateRange = (dateValue: string, range: DateRange, now: Date): boolean => {
-  const date = new Date(dateValue);
-  if (isNaN(date.getTime()) || date > now) return false;
-
-  const day = startOfDay(date);
-  const today = startOfDay(now);
-  const weekStart = addDays(today, -7);
-  const monthStart = addDays(today, -30);
-
-  if (range === 'today') return day.getTime() === today.getTime();
-  if (range === 'week') return day >= weekStart && day < today;
-  return day >= monthStart && day < weekStart;
-};
-
 const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ missions }) => {
-  const [dateRange, setDateRange] = useState<DateRange>('week');
-  const [showFilters, setShowFilters] = useState(false);
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [showTemporalTooltip, setShowTemporalTooltip] = useState(false);
 
-  const filteredMissions = useMemo(() => {
+  const analytics = useMemo(() => {
     const now = new Date();
-    return missions.filter(mission => isInDateRange(mission.date, dateRange, now));
-  }, [missions, dateRange]);
+    const dailyBuckets = [0, 0, 0, 0, 0, 0, 0];
+    const weeklyBuckets = [0, 0, 0, 0];
+    const monthlyBuckets = [0, 0, 0, 0, 0, 0];
 
-  const totalMissions = filteredMissions.length;
-  const completedMissions = filteredMissions.filter(m => m.status === 'Completed').length;
-  const successRate = totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0;
+    let totalSeconds = 0;
+    let totalCoverage = 0;
+    let detections = 0;
+    let sprays = 0;
+
+    missions.forEach(mission => {
+      const missionDate = new Date(mission.date);
+      if (!Number.isNaN(missionDate.getTime()) && missionDate <= now) {
+        const daysAgo = Math.floor((now.getTime() - missionDate.getTime()) / 86400000);
+        
+        if (daysAgo < 7 && daysAgo >= 0) dailyBuckets[6 - daysAgo] += 1;
+        
+        if (daysAgo < 28 && daysAgo >= 0) {
+          const weekIndex = Math.floor(daysAgo / 7);
+          weeklyBuckets[3 - weekIndex] += 1;
+        }
+
+        const monthsAgo = (now.getFullYear() - missionDate.getFullYear()) * 12 + (now.getMonth() - missionDate.getMonth());
+        if (monthsAgo < 6 && monthsAgo >= 0) {
+          monthlyBuckets[5 - monthsAgo] += 1;
+        }
+      }
+
+      totalSeconds += parseDurationSeconds(mission.duration);
+      totalCoverage += mission.coverageArea || 0;
+      detections += mission.totalDetections || mission.detectedSites?.length || 0;
+      sprays += mission.totalSprays || 0;
+    });
+
+    const completedCount = missions.filter(mission => mission.status === 'Completed' || mission.status?.toLowerCase() === 'completed').length;
+
+    return {
+      dailyBuckets,
+      weeklyBuckets,
+      monthlyBuckets,
+      sortieCount: missions.length,
+      completedCount,
+      detections,
+      sprays,
+      uptime: formatUptime(totalSeconds),
+      coverage: totalCoverage,
+    };
+  }, [missions]);
+
+  let chartValues = analytics.weeklyBuckets;
+  let chartLabels = ['W-3', 'W-2', 'W-1', 'CURR'];
+  if (timeframe === 'daily') {
+    chartValues = analytics.dailyBuckets;
+    chartLabels = ['D-6', 'D-5', 'D-4', 'D-3', 'D-2', 'D-1', 'TODAY'];
+  } else if (timeframe === 'monthly') {
+    chartValues = analytics.monthlyBuckets;
+    chartLabels = ['M-5', 'M-4', 'M-3', 'M-2', 'M-1', 'CURR'];
+  }
+
+  const sprayRate = analytics.detections > 0 ? (analytics.sprays / analytics.detections) * 100 : 0;
 
   return (
-    <div className="grid h-full grid-cols-1 gap-2 animate-fade-in">
-      <div className="flex items-center justify-end">
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-            showFilters
-              ? 'bg-orange-100 text-orange-700 dark:bg-orange-600/30 dark:text-orange-300'
-              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-          }`}
-        >
-          <FilterIcon />
-          <span className="ml-1">Filters</span>
-        </button>
+    <div className="min-h-full animate-fade-in space-y-4 pb-4 font-mono">
+      {/* Top Stats Banner */}
+      <section className="rounded-md border border-gcs-primary/30 bg-gcs-primary/5 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#74809b]">COMPLETED_SORTIE_LOGS</p>
+            <p className="mt-1 font-mono text-sm font-black uppercase tracking-[0.12em] text-emerald-400">{analytics.completedCount} SUCCESSFUL</p>
+          </div>
+          <div className="text-right">
+            <p className="font-mono text-2xl font-black text-white">{analytics.sortieCount}</p>
+            <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-[#74809b]">TOTAL_DATABASE</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Metric Cards Grid */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        <MetricCard icon={<Activity className="h-5 w-5" />} label="Stream_Count" value={String(analytics.sortieCount)} sublabel="Total_deployments" description="Total number of drone deployment sessions recorded in the database." />
+        <MetricCard icon={<Target className="h-5 w-5" />} label="AI_Identification" value={String(analytics.detections)} sublabel="Positive_targets" description="Confirmed mosquito larvae habitats detected via YOLOv8 computer vision." />
+        <MetricCard icon={<Droplet className="h-5 w-5" />} label="Neutralization" value={String(analytics.sprays)} sublabel="Spray_events" description="Manual intervention instances where the chemical payload was deployed." />
+        <MetricCard icon={<Clock3 className="h-5 w-5" />} label="Stream_Run_Time" value={analytics.uptime} sublabel="Total_flight_time" description="Total duration the drone system was in an ARMED state." />
+        <MetricCard icon={<PlusSquare className="h-5 w-5" />} label="Area_Treated" value={analytics.coverage.toFixed(2)} sublabel="Scaled_units_sq" description="Total surface area covered during operations in scaled square units." />
+        <MetricCard icon={<Percent className="h-5 w-5" />} label="Efficacy_RT" value={`${sprayRate.toFixed(0)}%`} sublabel={`${analytics.sprays}/${analytics.detections} Units`} description="Mission success rate based on target detection vs. successful manual neutralization sessions." />
       </div>
 
-      {showFilters && (
-        <div className="animate-fade-in-fast rounded-lg bg-gray-100 p-2 dark:bg-gray-700/50">
-          <div className="grid grid-cols-1 gap-2 text-[11px]">
+      {/* Temporal Analysis Chart */}
+      <section 
+        className="relative rounded-md border border-white/10 bg-[#1a1e31] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+        onMouseLeave={() => setShowTemporalTooltip(false)}
+      >
+        {showTemporalTooltip && (
+          <div 
+            className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b0e17]/95 p-6 text-center backdrop-blur-sm animate-fade-in border border-gcs-primary/60 shadow-[inset_0_0_20px_rgba(255,69,79,0.2)] rounded-md cursor-pointer"
+            onClick={() => setShowTemporalTooltip(false)}
+          >
+            <p className="font-mono text-[11px] leading-relaxed text-gcs-primary max-w-sm">
+              Activity frequency trending with daily, weekly, and monthly tracking options. Displays historical deployment sessions over time.
+            </p>
+          </div>
+        )}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 p-3">
+          <div className="flex items-center gap-2">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-gray-600 dark:text-gray-300">Date Range</label>
-              <select
-                value={dateRange}
-                onChange={e => setDateRange(e.target.value as DateRange)}
-                className="w-full max-w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] leading-tight dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                aria-label="Select analytics date range"
+              <h3 className="font-mono text-sm font-black uppercase tracking-[0.28em] text-white">Temporal_Analysis_v4</h3>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[#76829c]">Activity_Frequency_Trending</p>
+            </div>
+            <button 
+              onClick={(e) => { e.preventDefault(); setShowTemporalTooltip(v => !v); }}
+              className="flex h-4 w-4 items-center justify-center rounded-full border border-gcs-primary/40 bg-[#10131e] font-mono text-[9px] font-bold text-gcs-primary transition-colors hover:bg-gcs-primary/20 focus:outline-none"
+              aria-label="Show definition"
+            >
+              ?
+            </button>
+          </div>
+          <div className="flex gap-1 bg-[#10131e] p-1 rounded-sm border border-white/10 self-start sm:self-auto z-10">
+            {(['daily', 'weekly', 'monthly'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTimeframe(t)}
+                className={`px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] rounded-sm transition-colors ${timeframe === t ? 'bg-gcs-primary text-white shadow-[0_0_10px_rgba(255,69,79,0.3)]' : 'text-[#74809b] hover:text-white'}`}
               >
-                <option value="today">Last Mission</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
-              </select>
-            </div>
+                {t}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-2">
-        <div className="flex min-h-[86px] flex-col rounded-xl bg-gcs-card p-2.5 text-black shadow-sm dark:bg-gray-800">
-          <div className="flex h-full flex-col items-start gap-1 text-left">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gcs-primary/10 text-gcs-primary">
-              <MissionsIcon />
-            </span>
-            <p className="truncate whitespace-nowrap text-[11px] text-black dark:text-gray-400">Missions Flown</p>
-            <div className="flex flex-1 items-center justify-start">
-              <p className="text-lg font-bold text-black dark:text-white">{totalMissions.toFixed(1)}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex min-h-[86px] flex-col rounded-xl bg-gcs-card p-2.5 text-black shadow-sm dark:bg-gray-800">
-          <div className="flex h-full flex-col items-start gap-1 text-left">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gcs-primary/10 text-gcs-primary">
-              <CoverageIcon />
-            </span>
-            <p className="truncate whitespace-nowrap text-[11px] text-black dark:text-gray-400">Coverage Area</p>
-            <div className="flex flex-1 items-center justify-start">
-              <p className="text-lg font-bold text-black dark:text-white">0.0 <span className="text-[11px]">ha</span></p>
-            </div>
-          </div>
-        </div>
-        <div className="flex min-h-[86px] flex-col rounded-xl bg-gcs-card p-2.5 text-black shadow-sm dark:bg-gray-800">
-          <div className="flex h-full flex-col items-start gap-1 text-left">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gcs-primary/10 text-gcs-primary">
-              <SuccessIcon />
-            </span>
-            <p className="truncate whitespace-nowrap text-[11px] text-black dark:text-gray-400">Success Rate</p>
-            <div className="flex flex-1 items-center justify-start">
-              <p className="text-lg font-bold text-black dark:text-white">{successRate.toFixed(1)}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
-        <h3 className="mb-1.5 text-[11px] font-bold dark:text-white">Missions Over Time</h3>
-        <div className="min-h-[160px] flex-1">
-          <BarChart missions={filteredMissions} />
-        </div>
-      </div>
-      <div className="flex flex-col rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
-        <h3 className="mb-1.5 text-[11px] font-bold dark:text-white">Flight Duration Trend</h3>
-        <div className="flex min-h-[120px] flex-1 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700/50">
-          <LineChart missions={filteredMissions} />
-        </div>
-      </div>
-
-      <div className="flex flex-col rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
-        <h3 className="mb-1.5 text-[11px] font-bold dark:text-white">Operational and Efficiency</h3>
-        <div className="flex-grow space-y-1.5 text-[11px] text-gray-600 dark:text-gray-300">
-          <p>Area Covered: <span className="float-right font-semibold dark:text-gray-100">0.0</span></p>
-          <p>Spray Efficiency: <span className="float-right font-semibold text-orange-600">0.0%</span></p>
-          <p>Chemical: <span className="float-right font-semibold dark:text-gray-100">0.0</span></p>
-          <hr className="my-1.5 dark:border-gray-700" />
-          <p>Mosquito Reduction: <span className="float-right font-bold text-orange-600">0.0</span></p>
-        </div>
-      </div>
-      <div className="flex flex-col items-center rounded-xl bg-white p-2.5 shadow-sm dark:bg-gray-800">
-        <h3 className="mb-1.5 text-[11px] font-bold dark:text-white">Mission Performance Summary</h3>
-        <div className="flex flex-grow items-center justify-center">
-          <DonutChart percentage={successRate} />
-        </div>
-        <button className="mt-2 w-full rounded-lg bg-gcs-primary px-3 py-1.5 text-[11px] font-bold text-white transition-opacity hover:opacity-90">
-          Export Analytics
-        </button>
-      </div>
+        </header>
+        <TemporalChart values={chartValues} labels={chartLabels} />
+      </section>
     </div>
   );
 };

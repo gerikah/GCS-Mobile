@@ -1,12 +1,80 @@
-// FIX: Import React to provide types like ReactNode.
+// packages/types/index.ts
 import React from 'react';
 
-export type MissionStatus = 'Completed' | 'Interrupted' | 'In Progress';
+// --- NEW SCHEMA TYPES ---
+
+export interface User {
+  id: string;
+  full_name: string;
+  role: 'Pilot' | 'LGU Personnel' | 'Sanitation Officer';
+  email: string;
+}
+
+export interface City {
+  id: number;
+  name: string;
+}
+
+export interface Barangay {
+  id: number;
+  city_id: number;
+  name: string;
+  city?: City;
+}
+
+export interface FlightSession {
+  id: string;
+  pilot_id: string | null;
+  barangay_id: number | null;
+  start_time: string;
+  end_time: string | null;
+  status: 'active' | 'completed' | 'aborted';
+  pilot?: User;
+  barangay?: Barangay;
+}
+
+export interface TargetType {
+  id: number;
+  label: string;
+  description: string | null;
+}
+
+export interface Detection {
+  id: string;
+  session_id: string;
+  target_type_id: number;
+  confidence: number | null;
+  water_confirmed: boolean;
+  latitude: number;
+  longitude: number;
+  lidar_m: number | null;
+  image_url: string | null;
+  created_at: string;
+  target_type?: TargetType;
+}
+
+export interface HardwareTelemetry {
+  id: number;
+  session_id: string;
+  logged_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  altitude_lidar_m: number | null;
+  battery_voltage: number | null;
+  heading: number | null;
+  is_armed: boolean | null;
+}
+
+// --- LEGACY COMPATIBILITY TYPES (Mapped to new schema) ---
+
+export type MissionStatus = 'Completed' | 'Interrupted' | 'In Progress' | 'active' | 'completed' | 'aborted';
 
 export interface BreedingSiteInfo {
-    type: 'Enclosed' | 'Open';
+    type: string;
     object: string; // e.g., 'Tires', 'Sewage', 'Pots'
-    bbox: [number, number, number, number];
+    bbox?: [number, number, number, number];
+    confidence?: number;
+    location?: { lat: number; lon: number };
 }
 
 export interface Mission {
@@ -44,7 +112,7 @@ export interface LiveTelemetry {
         percentage: number;
     };
     satellites: number;
-    flightTime: string; // This will be sent by the backend, but we'll ignore it
+    flightTime: string; 
     distanceFromHome: number;
     flightMode: string;
     armed: boolean;
@@ -53,9 +121,6 @@ export interface LiveTelemetry {
     currentBreedingSite?: BreedingSiteInfo;
     detectedSites: BreedingSiteInfo[];
     gpsTrack: { lat: number; lon: number }[];
-    
-    // --- THIS IS THE NEW PART ---
-    // This will hold the status for your new 10-mode panel
     modes: {
       angle: boolean;
       positionHold: boolean;
@@ -67,13 +132,4 @@ export interface LiveTelemetry {
       mcBraking: boolean;
       beeper: boolean;
     }
-    // --- END OF NEW PART ---
-}
-
-export interface MissionPlan {
-  id?: string | number;
-  name: string;
-  waypoints: { lat: number; lon: number }[];
-  altitude: number;
-  speed: number;
 }

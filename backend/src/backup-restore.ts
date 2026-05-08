@@ -61,7 +61,7 @@ async function backupDatabase() {
     // Build SQL dump
     let sqlDump = `-- GCS Database Backup
 -- Generated: ${new Date().toISOString()}
--- Records: ${logsResult.rows.length} mission logs, ${plansResult.rows.length} mission plans
+-- Records: ${logsResult.rows.length} mission logs
 -- WARNING: This is a data-only backup. Tables must exist before restoring.
 
 BEGIN;
@@ -88,29 +88,9 @@ TRUNCATE TABLE mission_logs RESTART IDENTITY CASCADE;
       sqlDump += `INSERT INTO mission_logs (id, name, date, duration, status, location, gps_track, detected_sites) VALUES (${placeholders});\n`;
     }
 
-    sqlDump += `\n-- ===========================
--- Mission Plans Data
--- ===========================
-TRUNCATE TABLE mission_plans RESTART IDENTITY CASCADE;
-`;
-
-    // Insert mission_plans
-    for (const plan of plansResult.rows) {
-      const values = [
-        plan.id,
-        plan.name,
-        plan.altitude,
-        plan.speed,
-        JSON.stringify(plan.waypoints)
-      ];
-      const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-      sqlDump += `INSERT INTO mission_plans (id, name, altitude, speed, waypoints) VALUES (${placeholders});\n`;
-    }
-
     // Reset sequences
     sqlDump += `\n-- Reset sequences
 SELECT setval('mission_logs_id_seq', ${logsSeqResult.rows[0]?.last_value || 1});
-SELECT setval('mission_plans_id_seq', ${plansSeqResult.rows[0]?.last_value || 1});
 
 COMMIT;
 
@@ -129,8 +109,7 @@ COMMIT;
     );
     log(
       `📊 Records backed up:
-     - Mission Logs: ${logsResult.rows.length}
-     - Mission Plans: ${plansResult.rows.length}\n`,
+     - Mission Logs: ${logsResult.rows.length}\n`,
       colors.cyan
     );
 

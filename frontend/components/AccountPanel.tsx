@@ -10,7 +10,7 @@ const AccountPanel: React.FC<AccountPanelProps> = ({ email, onSignOut }) => {
     <div className="animate-fade-in rounded-xl bg-white p-3 shadow-sm dark:bg-gray-800">
       <h2 className="text-sm font-bold text-gcs-text-dark dark:text-white">Account</h2>
       <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Signed in as</p>
-      <p className="mt-0.5 text-[11px] font-semibold text-gcs-text-dark dark:text-white break-all">{email || 'No mission logs'}</p>
+      <p className="mt-0.5 text-[11px] font-semibold text-gcs-text-dark dark:text-white break-all">{email || 'Not signed in'}</p>
 
       <button
         onClick={onSignOut}

@@ -9,15 +9,16 @@ import FlightLogsPanel from './components/FlightLogsPanel';
 import SettingsPanel from './components/SettingsPanel';
 import GuidePanel from './components/GuidePanel';
 import AboutPanel from './components/AboutPanel';
-import AccountPanel from './components/AccountPanel';
 import AuthScreen from './components/AuthScreen';
 import SplashScreen from './components/SplashScreen';
 
 import { useDashboardData } from './hooks/useDashboardData';
 import { supabase } from './supabaseClient';
-import type { Mission } from 'types';
+import type { Mission } from './types';
 
-type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about' | 'account';
+const API_URL = 'http://192.168.254.189:8080';
+
+type View = 'dashboard' | 'analytics' | 'flightLogs' | 'settings' | 'guide' | 'about';
 
 interface AuthenticatedAppProps {
   session: Session;
@@ -46,13 +47,13 @@ const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ session, onSignOut 
   }, [theme]);
 
   const [missions, setMissions] = useState<Mission[]>([]);
-  const { overviewStats, liveTelemetry } = useDashboardData(false);
+  const { overviewStats } = useDashboardData();
   const [currentView, setCurrentView] = useState<View>('dashboard');
 
   useEffect(() => {
     const fetchMissions = async () => {
       try {
-        const response = await fetch('/api/missions');
+        const response = await fetch(`${API_URL}/api/missions`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -85,8 +86,6 @@ const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ session, onSignOut 
         return <GuidePanel />;
       case 'about':
         return <AboutPanel />;
-      case 'account':
-        return <AccountPanel email={session.user.email || ''} onSignOut={onSignOut} />;
       case 'dashboard':
       default:
         return <DashboardView overviewStats={overviewStats} missions={missions} />;
@@ -100,28 +99,25 @@ const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ session, onSignOut 
     settings: 'Settings',
     guide: 'Guide',
     about: 'About Project',
-    account: 'Account',
   };
 
   const contentClassName = currentView === 'dashboard' ? 'min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1 overflow-y-auto';
-  const showBackView = currentView === 'guide' || currentView === 'settings' || currentView === 'about' || currentView === 'account';
+  const showBackView = currentView === 'guide' || currentView === 'settings' || currentView === 'about';
 
   return (
-    <div className="app-theme app-shell-bg relative flex h-screen overflow-hidden bg-gcs-background font-sans text-gcs-text-dark dark:bg-gcs-dark dark:text-gcs-text-light">
-      <div className="pointer-events-none absolute -left-10 top-14 h-44 w-44 rounded-full bg-orange-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-1/3 h-52 w-52 rounded-full bg-blue-300/10 blur-3xl" />
+    <div className="app-theme app-shell-bg relative flex h-screen overflow-hidden bg-gcs-background font-sans text-gcs-text-light dark:bg-gcs-dark dark:text-gcs-text-light">
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       <main className="relative z-10 flex flex-1 flex-col overflow-hidden p-3 pb-20">
         <DashboardHeader
           title={viewTitles[currentView]}
-          batteryPercentage={liveTelemetry.battery.percentage}
           onOpenGuide={() => setCurrentView('guide')}
           onOpenSettings={() => setCurrentView('settings')}
           onOpenAbout={() => setCurrentView('about')}
-          onOpenAccount={() => setCurrentView('account')}
           showMenuButton={!showBackView}
           showBackButton={showBackView}
           onBack={() => setCurrentView('dashboard')}
+          userEmail={session.user.email || ''}
+          onSignOut={onSignOut}
         />
         <div className={contentClassName}>{renderView()}</div>
       </main>

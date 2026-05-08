@@ -2,41 +2,26 @@ import React, { useEffect, useState } from 'react';
 
 interface DashboardHeaderProps {
   title: string;
-  batteryPercentage: number;
   onOpenGuide: () => void;
   onOpenSettings: () => void;
   onOpenAbout: () => void;
-  onOpenAccount: () => void;
   showMenuButton: boolean;
   showBackButton: boolean;
   onBack: () => void;
-}
-
-const BatteryStatusIcon: React.FC<{ percentage: number }> = ({ percentage }) => {
-    const level = Math.round(percentage / 25); // 0-4
-    const color = percentage > 50 ? 'text-green-500' : percentage > 20 ? 'text-yellow-500' : 'text-red-500';
-
-    return (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm border dark:border-gray-700">
-            <svg className={`w-6 h-6 ${color}`} fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10.75 3.25V2a.75.75 0 00-1.5 0v1.25H9A2.75 2.75 0 006.25 6v10A2.75 2.75 0 009 18.75h2A2.75 2.75 0 0013.75 16V6A2.75 2.75 0 0011 3.25h-.25zM9 4.75h2a1.25 1.25 0 011.25 1.25v10a1.25 1.25 0 01-1.25 1.25H9A1.25 1.25 0 017.75 16V6A1.25 1.25 0 019 4.75z" clipRule="evenodd" />
-              {percentage > 10 && <rect x="8" y={15 - ((percentage-10)/90)*9} width="4" height={((percentage-10)/90)*9} rx="0.5" />}
-            </svg>
-            <span className={`font-semibold text-[11px] ${color}`}>{percentage.toFixed(1)}%</span>
-        </div>
-    )
+  userEmail: string;
+  onSignOut: () => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   title,
-  batteryPercentage,
   onOpenGuide,
   onOpenSettings,
   onOpenAbout,
-  onOpenAccount,
   showMenuButton,
   showBackButton,
   onBack,
+  userEmail,
+  onSignOut,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,25 +32,27 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   }, [showMenuButton]);
 
   return (
-    <header className="mb-2 border-b border-gray-200 pb-2 dark:border-gray-700">
+    <header className="mb-3 border-b border-white/10 pb-3">
       <div className="relative flex items-center justify-between">
         <div className="flex items-center gap-2">
           {showBackButton && (
             <button
               onClick={onBack}
-              className="rounded-md px-2 py-1 text-[11px] font-semibold text-gray-100"
+              className="border-l-2 border-gcs-primary px-2 py-1 font-mono text-[11px] font-bold text-gray-100"
               aria-label="Go back"
             >
               &lt;
             </button>
           )}
-          <h1 className="text-sm font-bold text-gray-100">{title}</h1>
+          <div>
+            <h1 className="font-mono text-lg font-black uppercase italic tracking-[-0.02em] text-gray-100">{title}_</h1>
+          </div>
         </div>
         {showMenuButton && (
           <div className="flex justify-end">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="rounded-md px-3 py-1.5 text-sm font-semibold text-gray-100"
+              className="rounded border border-white/10 bg-[#10131e] px-3 py-1.5 font-mono text-sm font-semibold text-gray-100"
               aria-label="Open menu"
             >
               &#9776;
@@ -80,12 +67,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             className="absolute inset-0 bg-black/30"
             onClick={() => setMenuOpen(false)}
           />
-          <aside className="absolute right-0 top-0 h-full w-[78vw] min-w-[260px] bg-[#162746] p-4 shadow-2xl animate-slide-in">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-100">Menu</h3>
+          <aside className="absolute right-0 top-0 bottom-0 flex w-[78vw] min-w-[260px] flex-col border-l border-gcs-primary/30 bg-[#111521] shadow-2xl animate-slide-in">
+            <div className="flex flex-1 flex-col overflow-y-auto p-4">
+              <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-mono text-sm font-bold uppercase tracking-[0.25em] text-gray-100">Menu_</h3>
               <button
                 onClick={() => setMenuOpen(false)}
-                className="rounded-md bg-[#243b63] px-2 py-1 text-[11px] font-semibold text-gray-100"
+                className="rounded border border-white/10 bg-[#0b0e17] px-2 py-1 font-mono text-[11px] font-semibold text-gray-100"
               >
                 X
               </button>
@@ -96,7 +84,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   onOpenSettings();
                   setMenuOpen(false);
                 }}
-                className="w-full rounded-md px-2 py-3 text-left text-[11px] font-medium text-gray-100 hover:bg-[#243b63]"
+                className="w-full border-l border-transparent px-2 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gray-100 hover:border-gcs-primary hover:bg-gcs-primary/10"
               >
                 Settings
               </button>
@@ -105,27 +93,32 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   onOpenGuide();
                   setMenuOpen(false);
                 }}
-                className="w-full rounded-md px-2 py-3 text-left text-[11px] font-medium text-gray-100 hover:bg-[#243b63]"
+                className="w-full border-l border-transparent px-2 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gray-100 hover:border-gcs-primary hover:bg-gcs-primary/10"
               >
                 Guide
-              </button>
-              <button
-                onClick={() => {
-                  onOpenAccount();
-                  setMenuOpen(false);
-                }}
-                className="w-full rounded-md px-2 py-3 text-left text-[11px] font-medium text-gray-100 hover:bg-[#243b63]"
-              >
-                Account
               </button>
               <button
                 onClick={() => {
                   onOpenAbout();
                   setMenuOpen(false);
                 }}
-                className="w-full rounded-md px-2 py-3 text-left text-[11px] font-medium text-gray-100 hover:bg-[#243b63]"
+                className="w-full border-l border-transparent px-2 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gray-100 hover:border-gcs-primary hover:bg-gcs-primary/10"
               >
                 About
+              </button>
+            </div>
+            </div>
+
+            <div className="flex-shrink-0 border-t border-white/10 bg-[#111521] p-4 pb-24 sm:pb-8">
+              <p className="mt-1 text-[11px] text-gray-500">Signed in as</p>
+              <p className="mb-4 mt-0.5 break-all font-mono text-[11px] font-semibold text-white">
+                {userEmail || 'Not signed in'}
+              </p>
+              <button
+                onClick={onSignOut}
+                className="w-full rounded border border-red-500/30 bg-red-500/10 px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-red-400 transition-colors hover:bg-red-500/20"
+              >
+                Logout
               </button>
             </div>
           </aside>
